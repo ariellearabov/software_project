@@ -84,4 +84,7 @@ def validation_iter():  # need to change this so it will work
     except:
         assert 2 == 1
     else:
-        return iter
+        return iter 
+
+if __name__ == "__main__":
+    main() 
