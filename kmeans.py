@@ -151,7 +151,7 @@ def euclidean_distance(x, y):
 
 '''
 '''
-def update_centorids():
+def update_centroids():
     return 0 
     
 if __name__ == "__main__":
