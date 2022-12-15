@@ -2,7 +2,7 @@
 In this assignment we're implementing the k-means algorithm in python and in C.
 Provided below is the python implementation.
 '''
-# sys.args returns a list with the python file name and the args used 
+
 import sys
 
 def main():
@@ -31,9 +31,11 @@ def main():
         clusters = calc_k_means(k, iter, mat)
     except:
         print("An Error Has Occurred")
-    
+        return 
 
-    return 0
+    for i in range(len(clusters)):
+        print(clusters[i][0])
+
 
 '''
 Input- the path to the input text file.
@@ -45,7 +47,7 @@ def read_file(file_path):
     line = f.readline() # reading the first line 
     mat = []
     while line.strip() != "": # until we reach the empty line
-        x = [float(elem) for elem in line.split(",")] # wrap observation in a list. List meant to hold observation and cluster.
+        x = [tuple(float(elem) for elem in line.split(","))] # wrap datapoint in a list which is meant to hold the datapoint and the cluster.
         mat.append(x)
         line = f.readline()
     f.close()
@@ -63,7 +65,7 @@ def check_input():
     if n == 4: # iter included in input
         i += 1
         iter_arg = True
-    input_file_path = sys.argv[i + 1] # If iter value is not a part of input, this will be 2nd arg 
+    input_file_path = sys.argv[i + 1] # if iter value is not a part of input, this will be 2nd arg 
     return input_file_path, iter_arg
 
 '''
@@ -84,49 +86,42 @@ def validation_k(N):
 def validation_iter(iter_arg): 
     try:
         if iter_arg:  # if iter arg exists 
-            iter = int(sys.argv[2])  # checks if k arg is an int 
+            iter = int(sys.argv[2])  # checks if iter arg is an int 
             if not 1<iter<1000:  # checks if iter in valid range 
                 assert 2 == 1
     except:
         assert 2 == 1
     if not iter_arg:
-        iter = 200  # no arg given, gives defualt arg as stated 
+        iter = 200  # no arg given, gives defualt arg 
     return iter 
 
 '''
 This function calculates the K cluster centroids produced by the K-means algorithm.
 Firstly, the function initializes the centroids to be the first k datapoints.
 Then the function performs the following-
-- Add each observation to its closest cluster and removing it from its old one. 
-  Finding the closet cluster is done using the "find_closest_cluster" function.
+- Add each observation to its closest cluster and removing it from its old one using the "find_closest_cluster" function.
 - Calculat each cluster's new centroid (as the average of the cluster's updated datapoints).
-- Calculat each cluster's *deviation* between its old centroid and its new one. 
-  The deviation is calculated using the "euclidean_distance" function. 
-The function stops when iter iterations were preformed, or when the deviation of all clusters 
-is less than epsilon squared (i.e., the distance itself is less than epsilon).
+- Calculat each cluster's deviation between its old centroid and its new one using the "euclidean_distance" function. 
+The function stops when iter iterations were preformed, or when the deviation of all clusters is less than epsilon.
 '''
 def calc_k_means(k, iter, mat, epsilon=0.001):
-    clusters = [[mat[i], set()] for i in range(k)] # Initialize centroids as first k datapoints
+    clusters = [[mat[i], set()] for i in range(k)] # initialize centroids as first k datapoints
     converged = False 
     while (iter > 0) and (not converged):
         for x in mat: # checks each dataset 
             min_index = find_closest_cluster(x, clusters) 
-            if k < 0:  # need to change this, how do i know that x was already inserted in another cluster??
-                clusters[x[1]][1].remove(x[0]) 
+            if len(x) != 1: # x is part of a cluster
+                clusters[x[1]][1].remove(x[0]) # remove x from said cluster 
                 x[1] = min_index
             else:
                 x.append(min_index)
-            clusters[min_index][1].add(x[0])
-            update_centroids()
-
-
-    return 0
+            clusters[min_index][1].add(x[0]) # add x to the relevent cluster 
+            converged = update_centroids(k, epsilon, converged, clusters)  # update centroids and check if converged.
+    return clusters
 
 '''
-This function finds the index of the closest centroid to dataset x.
-Distance is measured with euclidean distance. 
+This function finds the index of the closest centroid to dataset x using the euclidean_distance function. 
 Assumptions - for each centroid dimension(x) == dimension(centorid).
-The function uses the euclidean_distance function. 
 '''
 def find_closest_cluster(x, clusters):
     min_index = 0
@@ -140,7 +135,6 @@ def find_closest_cluster(x, clusters):
 
 '''
 This function returns the euclidean distance between the two vectors (represented by float lists).
-The function assumes the dimension of the lists is columns.
 '''
 def euclidean_distance(x, y):  
     d = 0 
@@ -148,11 +142,24 @@ def euclidean_distance(x, y):
         d += ((x[i] - y[i])**2)**0.5
     return d
 
-
 '''
+This function updates each centroid and checks if for all of them if their distance between the updated centroid to the previous one is less than epsilon. 
 '''
-def update_centroids():
-    return 0 
+def update_centroids(k, eps, converged, clusters):
+    max_deviation = -1
+    for i in range(k): # for each cluster
+        prev_mu = clusters[i][0]  # retrieves mu 
+        new_mu = []
+        for j in range(len(prev_mu)):
+            cluster_len = len(clusters[i][1])
+            new_mu.append(sum((x[j] for x in clusters[i][1]))/ cluster_len)
+        clusters[i][0] = tuple(new_mu)
+        deviation = euclidean_distance(prev_mu, new_mu)
+        if deviation > max_deviation: # deviation is always >= 0 therefore max will always != -1 after first iteration  
+            max_deviation = deviation
+        if max_deviation < eps :  # if max is smaller then epsilon than all clusters are converged
+            converged = True
+    return converged
     
 if __name__ == "__main__":
     main() 
