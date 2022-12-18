@@ -26,15 +26,16 @@ def main():
     except(AssertionError):
         print("Invalid maximum iteration!")
         return 
-    
+ 
     try:
         clusters = calc_k_means(k, iter, mat)
     except:
         print("An Error Has Occurred")
         return 
-
-    for i in range(len(clusters)):
-        print(clusters[i][0])
+    
+    for cluster in clusters:
+        st = ",".join(["%.4f" % elem for elem in cluster[0]]) 
+        print(st)
 
 
 '''
@@ -74,7 +75,11 @@ validation_x functions check whether the specific args are valid
 
 def validation_k(N):  
     try:
-        k = int(sys.argv[1])  # checks if k arg is an int 
+        float_k = float(sys.argv[1]) # checks if k arg is a float (if its int it also works)
+        if float_k.is_integer():
+            k = int(float_k)
+        if not float_k.is_integer():
+            assert 1 == 0
         if not 1<k<N:  # checks if k in valid range 
             assert 1 == 0
     except:
@@ -86,7 +91,11 @@ def validation_k(N):
 def validation_iter(iter_arg): 
     try:
         if iter_arg:  # if iter arg exists 
-            iter = int(sys.argv[2])  # checks if iter arg is an int 
+            float_iter = float(sys.argv[2]) # checks if iter arg is a float (if its int it also works)
+            if float_iter.is_integer():
+                iter = int(float_iter)
+            if not float_iter.is_integer():
+                assert 1 == 0
             if not 1<iter<1000:  # checks if iter in valid range 
                 assert 2 == 1
     except:
@@ -105,9 +114,10 @@ Then the function performs the following-
 The function stops when iter iterations were preformed, or when the deviation of all clusters is less than epsilon.
 '''
 def calc_k_means(k, iter, mat, epsilon=0.001):
-    clusters = [[mat[i], set()] for i in range(k)] # initialize centroids as first k datapoints
+    clusters = [[mat[i][0], set()] for i in range(k)] # initialize centroids as first k datapoints
     converged = False 
-    while (iter > 0) and (not converged):
+    iter_number = 0
+    while (iter != iter_number) and (not converged):
         for x in mat: # checks each dataset 
             min_index = find_closest_cluster(x, clusters) 
             if len(x) != 1: # x is part of a cluster
@@ -116,7 +126,8 @@ def calc_k_means(k, iter, mat, epsilon=0.001):
             else:
                 x.append(min_index)
             clusters[min_index][1].add(x[0]) # add x to the relevent cluster 
-            converged = update_centroids(k, epsilon, converged, clusters)  # update centroids and check if converged.
+        converged = update_centroids(k, epsilon, converged, clusters)  # update centroids and check if converged.
+        iter_number += 1
     return clusters
 
 '''
@@ -125,9 +136,9 @@ Assumptions - for each centroid dimension(x) == dimension(centorid).
 '''
 def find_closest_cluster(x, clusters):
     min_index = 0
-    min_dist = euclidean_distance(x, clusters[0][0])  # for 0<= i <= N-1 - clusters[i][0] == centroid 
+    min_dist = euclidean_distance(x[0], clusters[0][0])  # for 0<= i <= N-1 : clusters[i][0] == centroid 
     for i in range(1, len(clusters)):
-        curr_dist = euclidean_distance(x, clusters[i][0])
+        curr_dist = euclidean_distance(x[0], clusters[i][0])
         if curr_dist < min_dist:
             min_dist = curr_dist
             min_index = i 
@@ -139,7 +150,8 @@ This function returns the euclidean distance between the two vectors (represente
 def euclidean_distance(x, y):  
     d = 0 
     for i in range(len(x)):
-        d += ((x[i] - y[i])**2)**0.5
+        d += (x[i] - y[i])**2
+    d = d**0.5
     return d
 
 '''
@@ -157,8 +169,8 @@ def update_centroids(k, eps, converged, clusters):
         deviation = euclidean_distance(prev_mu, new_mu)
         if deviation > max_deviation: # deviation is always >= 0 therefore max will always != -1 after first iteration  
             max_deviation = deviation
-        if max_deviation < eps :  # if max is smaller then epsilon than all clusters are converged
-            converged = True
+    if max_deviation < eps :  # if max is smaller then epsilon than all clusters are converged
+        converged = True
     return converged
     
 if __name__ == "__main__":
